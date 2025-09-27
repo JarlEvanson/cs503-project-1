@@ -8,6 +8,7 @@
 #include "s8.h"
 #include "test.h"
 #include "util.h"
+#include "vm.h"
 
 int test_definition_compare(const void* obj_0, const void* obj_1) {
     TestDefinition* t_0 = (TestDefinition*) obj_0;
@@ -27,6 +28,7 @@ int main() {
         arena_test_list,
         gc_test_list,
         s8_test_list,
+        vm_test_list,
     };
     size_t test_list_count = countof(test_lists);
     
