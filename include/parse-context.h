@@ -27,6 +27,9 @@ struct ParseErrorNode {
 
 typedef ParseErrorNode* ParseContext;
 
+typedef struct Parser Parser;
+void parse_context_print(ParseContext context, Parser* parser);
+
 size_t parse_context_error_count(ParseContext context);
 void parse_context_add_error(
     Vm* vm,
