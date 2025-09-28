@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "gc.h"
+#include "parse-context.h"
 #include "sexpr.h"
 #include "vm.h"
 
@@ -41,6 +42,14 @@ bool vm_init(Vm* vm) {
         sexpr_cons_size,
         sexpr_cons_copy,
         sexpr_cons_get_children
+    );
+
+    gc_add_type(
+        &vm->gc,
+        alignof(ParseErrorNode),
+        parse_context_size,
+        parse_context_copy,
+        parse_context_get_children
     );
 
     env_init(vm, &vm->vars);

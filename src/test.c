@@ -5,6 +5,7 @@
 #include "arena.h"
 #include "common.h"
 #include "gc.h"
+#include "parse-context.h"
 #include "s8.h"
 #include "test.h"
 #include "util.h"
@@ -27,6 +28,7 @@ int main() {
     TestList test_lists[] = {
         arena_test_list,
         gc_test_list,
+        parse_context_test_list,
         s8_test_list,
         vm_test_list,
     };
