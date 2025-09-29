@@ -4,6 +4,7 @@
 
 #include "arena.h"
 #include "common.h"
+#include "eval-context.h"
 #include "gc.h"
 #include "lexer.h"
 #include "parse-context.h"
@@ -29,6 +30,7 @@ int test_definition_compare(const void* obj_0, const void* obj_1) {
 int main() {
     TestList test_lists[] = {
         arena_test_list,
+        eval_context_test_list,
         gc_test_list,
         lexer_test_list,
         parse_context_test_list,
