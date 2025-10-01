@@ -1,7 +1,7 @@
 
 CFLAGS := -Wall -Wextra --std=c99 -g -I include -c
 
-OBJECTS := arena.o gc.o s8.o sexpr.o vm.o
+OBJECTS := arena.o gc.o parse-context.o s8.o sexpr.o vm.o
 
 .PHONY: build-lisp build-test build-fuzz
 build-lisp: build/lisp
