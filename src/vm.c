@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "gc.h"
+#include "parse-context.h"
 #include "sexpr.h"
 #include "vm.h"
 
@@ -12,6 +13,7 @@ bool vm_init(Vm* vm) {
     }
 
     gc_add_sexpr(&vm->gc);
+    gc_add_parse_context(&vm->gc);
 
     env_init(vm, &vm->vars);
     env_init(vm, &vm->funcs);
