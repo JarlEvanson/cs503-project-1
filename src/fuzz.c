@@ -3,6 +3,9 @@
 
 #include <unistd.h>
 
+#include "parser.h"
+#include "vm.h"
+
 __AFL_FUZZ_INIT();
 
 int main() {
@@ -14,8 +17,31 @@ int main() {
 
     buffer = __AFL_FUZZ_TESTCASE_BUF;
     while (__AFL_LOOP(100000)) {
-        size_t length = __AFL_FUZZ_TESTCASE_LEN;
-        printf("Buffer: %p\nLength: %zu\n", buffer, length);
+        Vm vm;
+        Parser parser;
+
+        if (!vm_init(&vm)) {
+            fprintf(stderr, "failed to initialize VM\n");
+            return EXIT_FAILURE;
+        }
+        s8 input;
+        input.ptr = (uint8_t*) buffer;
+        input.len = __AFL_FUZZ_TESTCASE_LEN;
+        parser_init_s8(&parser, input);
+
+        ParseResult parse_result;
+        while (parser_next_sexpr(&vm, &parser, &parse_result)) {
+            if (!parse_result.ok) {
+                parse_context_print(parse_result.as.err, &parser);
+                continue;
+            }
+
+            PRINT_SEXPR(parse_result.as.ok);
+            printf("\n");
+        }
+
+        parser_free(&parser);
+        vm_free(&vm);
     }
 
     return EXIT_SUCCESS;
