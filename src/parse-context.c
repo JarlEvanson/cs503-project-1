@@ -4,6 +4,7 @@
 #include "common.h"
 #include "gc.h"
 #include "parse-context.h"
+#include "parser.h"
 #include "vm.h"
 
 #define PARSE_ERROR_NODE_GC_TYPE_ID 4
@@ -45,6 +46,47 @@ void parse_context_add_error(
     *current = new_error;
 
     VM_UNROOT(vm, context);
+}
+
+void parse_context_print(ParseContext context, Parser* parser) {
+    ParseErrorNode* current = context;
+    while (current != NULL) {
+        switch (current->type) {
+            case INVALID_ESCAPE:
+                printf("invalid escape");
+                break;
+            case INVALID_SUFFIX:
+                printf("invalid suffix");
+                break;
+            case INVALID_UTF8:
+                printf("invalid UTF-8");
+                break;
+            case MISSING_SEXPR:
+                printf("missing S-Expression");
+                break;
+            case UNTERMINATED_LIST:
+                printf("unterminated list");
+                break;
+            case UNTERMINATED_STRING:
+                printf("unterminated string");
+                break;
+        }
+
+        printf(
+            ": (%zu-%zu) `",
+            current->index,
+            current->index + current->length
+        );
+        fwrite(
+            &parser->lexer.input[current->index],
+            current->length,
+            1,
+            stdout
+        );
+        printf("`\n");
+
+        current = current->next;
+    }
 }
 
 static size_t parse_context_size(GcObject* object) {

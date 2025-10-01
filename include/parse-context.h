@@ -36,6 +36,9 @@ void parse_context_add_error(
     size_t length
 );
 
+typedef struct Parser Parser;
+void parse_context_print(ParseContext context, Parser* parser);
+
 void gc_add_parse_context(Gc* gc);
 
 #ifdef ENABLE_TESTS

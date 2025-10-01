@@ -7,6 +7,7 @@
 #include "gc.h"
 #include "lexer.h"
 #include "parse-context.h"
+#include "parser.h"
 #include "s8.h"
 #include "test.h"
 #include "util.h"
@@ -31,6 +32,7 @@ TestList acquire_unit_tests() {
         gc_test_list,
         lexer_test_list,
         parse_context_test_list,
+        parser_test_list,
         s8_test_list,
         vm_test_list,
     };
