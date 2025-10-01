@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "arena.h"
 #include "common.h"
 #include "test.h"
 #include "util.h"
@@ -21,7 +22,7 @@ int test_definition_compare(const void* obj_0, const void* obj_1) {
 
 TestList acquire_unit_tests() {
     TestList unit_test_lists[] = {
-
+        arena_test_list,
     };
     size_t unit_test_list_count = countof(unit_test_lists);
 

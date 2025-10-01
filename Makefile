@@ -1,6 +1,8 @@
 
 CFLAGS := -Wall -Wextra --std=c99 -g -I include -c
 
+OBJECTS := arena.o
+
 .PHONY: build-lisp build-test build-fuzz
 build-lisp: build/lisp
 build-test: build/test-runner
