@@ -7,7 +7,7 @@
 
 // Enables Valgrind support for any custom memory allocators in order to better
 // ensure correctness.
-// #define ENABLE_VALGRIND_SUPPORT
+#define ENABLE_VALGRIND_SUPPORT
 
 // Forces arenas to be zeroed on initialization and reset.
 //
@@ -15,7 +15,7 @@
 // #define DEBUG_CLEAR_ARENA
 // Forces garbage to be collected on every allocation, which increases the
 // likelihood of any garbage collection bugs occurring.
-// #define DEBUG_STRESS_GC
+#define DEBUG_STRESS_GC
 
 // Enables logging of GC operations.
 // #define DEBUG_LOG_GC

@@ -57,12 +57,18 @@ bool vm_init(Vm* vm) {
 
     env_init(vm, &vm->vars);
     env_init(vm, &vm->funcs);
+
+    VM_ROOT(vm, &vm->vars.list);
+    VM_ROOT(vm, &vm->funcs.list);
     return true;
 }
 
 void vm_free(Vm* vm) {
     env_free(vm, &vm->funcs);
     env_free(vm, &vm->vars);
+
+    VM_UNROOT(vm, &vm->vars.list);
+    VM_UNROOT(vm, &vm->funcs.list);
 
     gc_free(&vm->gc);
 }
@@ -119,12 +125,9 @@ SExpr* vm_alloc_cons(Vm* vm, SExpr* car, SExpr* cdr) {
 void env_init(Vm* vm, Environment* env) {
     SExpr* values = vm_alloc_cons(vm, NIL, NIL);
     env->list = vm_alloc_cons(vm, NIL, values);
-
-    VM_ROOT(vm, &env->list);
 }
 
 void env_free(Vm* vm, Environment* env) {
-    VM_UNROOT(vm, &env->list);
     env->list = NULL;
 }
 

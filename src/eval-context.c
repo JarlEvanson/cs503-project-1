@@ -67,6 +67,12 @@ EvalContext* eval_context_alloc(Vm* vm) {
         gc_alloc(&vm->gc, EVAL_CONTEXT_TYPE_ID, sizeof(EvalContext));
 
     ((EvalContext*) object)->has_error = false;
+
+    ((EvalContext*) object)->error = ARG_INVALID_TYPE;
+    ((EvalContext*) object)->arg_index = 0;
+    ((EvalContext*) object)->sexpr = NULL;
+    ((EvalContext*) object)->sexpr_type = SEXPR_SYMBOL;
+
     ((EvalContext*) object)->frame = NULL;
     return (EvalContext*) object;
 }
@@ -101,14 +107,19 @@ void eval_context_push_frame(Vm* vm, EvalContext* context, SExpr* id) {
     VM_ROOT(vm, &context);
     VM_ROOT(vm, &id);
 
+    Environment env;
+    env_init(vm, &env);
+
+    VM_ROOT(vm, &env.list);
     EvalFrame* frame =
         (EvalFrame*) gc_alloc(&vm->gc, EVAL_FRAME_TYPE_ID, sizeof(EvalFrame));
+    VM_UNROOT(vm, &env.list);
+
+    frame->function_id = id;
+    frame->env = env;
 
     frame->next = context->frame;
     context->frame = frame;
-
-    frame->function_id = id;
-    env_init(vm, &frame->env);
 
     VM_UNROOT(vm, &id);
     VM_UNROOT(vm, &context);
@@ -267,18 +278,17 @@ size_t eval_context_size(GcObject* object) {
 }
 
 void eval_context_copy(Gc* gc, GcObject* object, GcObject* new_object) {
-    ((EvalContext*) new_object)->has_error =
-        ((EvalContext*) object)->has_error;
+    EvalContext* eval = (EvalContext*) object;
+    EvalContext* new_eval = (EvalContext*) new_object;
 
-    ((EvalContext*) new_object)->error = ((EvalContext*) object)->error;
-    ((EvalContext*) new_object)->arg_index =
-        ((EvalContext*) object)->arg_index;
-    ((EvalContext*) new_object)->sexpr = ((EvalContext*) object)->sexpr;
-    ((EvalContext*) new_object)->sexpr_type =
-        ((EvalContext*) object)->sexpr_type;
+    new_eval->has_error = eval->has_error;
 
-    ((EvalContext*) new_object)->frame = (EvalFrame*)
-        gc_copy_object(gc, (GcObject*) ((EvalContext*) object)->frame);
+    new_eval->error = eval->error;
+    new_eval->arg_index = eval->arg_index;
+    new_eval->sexpr = (SExpr*) gc_copy_object(gc, (GcObject*) eval->sexpr);
+    new_eval->sexpr_type = eval->sexpr_type;
+
+    new_eval->frame = (EvalFrame*) gc_copy_object(gc, (GcObject*) eval->frame);
 }
 
 GcObject* eval_context_get_children(GcObject* object, GcObject* position) {
@@ -291,20 +301,21 @@ size_t eval_frame_size(GcObject* object) {
 }
 
 void eval_frame_copy(Gc* gc, GcObject* object, GcObject* new_object) {
-    ((EvalFrame*) new_object)->function_id = (SExpr*) gc_copy_object(
-        gc,
-        (GcObject*) ((EvalFrame*) object)->function_id
-    );
+    EvalFrame* frame = (EvalFrame*) object;
+    EvalFrame* new_frame = (EvalFrame*) new_object;
 
-    ((EvalFrame*) new_object)->env.list = (SExpr*) gc_copy_object(
-        gc,
-        (GcObject*) ((EvalFrame*) object)->env.list
-    );
+    new_frame->function_id =
+        (SExpr*) gc_copy_object(gc, (GcObject*) frame->function_id);
 
-    ((EvalFrame*) new_object)->next = (EvalFrame*) gc_copy_object(
-        gc,
-        (GcObject*) ((EvalFrame*) object)->next
-    );
+    new_frame->env.list =
+        (SExpr*) gc_copy_object(gc, (GcObject*) frame->env.list);
+
+    if (frame->next != NULL) {
+        new_frame->next = 
+            (EvalFrame*) gc_copy_object(gc, (GcObject*) frame->next);
+    } else {
+        new_frame->next = NULL;
+    }
 }
 
 GcObject* eval_frame_get_children(GcObject* object, GcObject* position) {
