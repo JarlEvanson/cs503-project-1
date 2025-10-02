@@ -18,7 +18,9 @@ typedef union {
     bool (*unit_test)();
     struct {
         uint8_t* input;
+        size_t input_len;
         uint8_t* output;
+        size_t output_len;
     };
 } TestUnion;
 
