@@ -1,0 +1,5 @@
+(car (cdr ()))
+(car (car (car (cdr (cdr (cdr ()))))))
+(car (cdr '(1 2)))
+(cdr (car '((1 2 3) (1 2 3))))
+(car (cdr (cdr '(1 2 3))))

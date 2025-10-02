@@ -1,0 +1,9 @@
+is_nil
+is_symbol
+is_string
+is_number
+is_list
+cons
+car
+cdr
+cadr
