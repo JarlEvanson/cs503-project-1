@@ -1,5 +1,5 @@
 
-CFLAGS := -Wall -Wextra --std=c99 -g -I include -c -O0
+CFLAGS := -Wall -Wextra --std=c99 -g -I include -c
 
 OBJECTS := arena.o builtin.o eval-context.o eval.o gc.o lexer.o parse-context.o parser.o s8.o sexpr.o vm.o
 

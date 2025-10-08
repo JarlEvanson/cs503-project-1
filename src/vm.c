@@ -18,10 +18,11 @@ bool vm_init(Vm* vm) {
     gc_add_eval_context(&vm->gc);
 
     env_init(vm, &vm->vars);
-    env_init(vm, &vm->funcs);
-
     VM_ROOT(vm, &vm->vars.list);
+    
+    env_init(vm, &vm->funcs);
     VM_ROOT(vm, &vm->funcs.list);
+
     return true;
 }
 

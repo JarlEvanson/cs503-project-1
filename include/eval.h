@@ -16,6 +16,19 @@ typedef struct {
 
 EvalResult eval(Vm* vm, SExpr* sexpr);
 
+bool validate_func_def(
+    Vm* vm,
+    EvalContext* context,
+    SExpr* function_def
+);
+
+bool eval_function_arguments(
+    Vm* vm,
+    EvalContext* context,
+    SExpr* arguments,
+    SExpr** result
+);
+
 #ifdef ENBALE_TESTS
 
 #include "test.h"

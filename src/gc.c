@@ -81,7 +81,7 @@ size_t gc_add_type(
 
 #ifdef DEBUG_LOG_GC
 void gc_root(Gc* gc, GcObject** root, const char* file, size_t line) {
-    printf("gc root %p at %s:%zu\n", root, file, line);
+    printf("gc root %p pointed at %p at %s:%zu\n", root, *root, file, line);
 #else
 void gc_root(Gc* gc, GcObject** root) {
 #endif
@@ -99,7 +99,7 @@ void gc_root(Gc* gc, GcObject** root) {
 
 #ifdef DEBUG_LOG_GC
 void gc_unroot(Gc* gc, GcObject** root, const char* file, size_t line) {
-    printf("gc unroot %p at %s:%zu\n", root, file, line);
+    printf("gc unroot %p pointed at %p at %s:%zu\n", root, *root, file, line);
 #else
 void gc_unroot(Gc* gc, GcObject** root) {
 #endif
@@ -155,6 +155,14 @@ static void gc_clear_forwarding(Gc* gc) {
     }
 }
 
+void validate_address(Gc* gc, void* address) {
+    uintptr_t base = (uintptr_t) gc->active.base;
+    uintptr_t end = (uintptr_t) gc->active.end;
+    uintptr_t addr = (uintptr_t) address;
+
+    ASSERT(base <= addr && addr <= end, "%p", address);
+}
+
 void gc_collect(Gc* gc) {
 #ifdef DEBUG_LOG_GC
     printf("gc collect begin\n");
@@ -179,10 +187,14 @@ reset_mark:
 
         if (*root == NULL) continue;
 #ifdef DEBUG_LOG_GC
-        printf("gc copy root %p\n", root);
+        printf("gc copy root %p pointed at %p\n", root, *root);
 #endif
+        validate_address(gc, *root);
         gc_copy_object(gc, *root);
     }
+    Arena swap = gc->active;
+    gc->active = gc->inactive;
+    gc->inactive = swap;
 
     // Assign the results of the copy to the roots.
     for (size_t index = 0; index < gc->root_count; index++) {
@@ -195,13 +207,11 @@ reset_mark:
         // location and we've already updated the root.
         if ((*root)->forward_ptr == NULL) continue;
         *root = (*root)->forward_ptr;
+        validate_address(gc, *root);
     }
 
     // The garbage collection has completed successfully.
     // Swap the arenas to prepare for additional allocation.
-    Arena swap = gc->active;
-    gc->active = gc->inactive;
-    gc->inactive = swap;
 
     // Reset the old arena
     arena_reset(&gc->inactive);
@@ -211,6 +221,8 @@ reset_mark:
     printf("gc collect end\n");
 #endif
 }
+
+#include "sexpr.h"
 
 GcObject* gc_copy_object(Gc* gc, GcObject* object) {
     if (object->forward_ptr != NULL) {

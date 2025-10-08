@@ -209,7 +209,7 @@ void eval_context_invalid_arg_def_type(
     SExpr* arg_def
 ) {
     context->has_error = true;
-    context->error = ERRONOUS_ARG_COUNT;
+    context->error = INVALID_ARG_DEF_TYPE;
     context->arg_index = arg_index;
     context->sexpr = arg_def;
 }
@@ -271,9 +271,9 @@ void eval_context_print(const EvalContext* context) {
                 printf("`\n");
                 break;
             case INVALID_ARG_DEF_TYPE:
-                printf("argument definition (`");
+                printf("argument definition `");
                 PRINT_SEXPR(context->sexpr);
-                printf("at %zu has invalid type\n", context->arg_index);
+                printf("` at index %zu has invalid type\n", context->arg_index);
                 break;
             case SYMBOL_LOOKUP_FAILED:
                 printf("lookup of symbol `");

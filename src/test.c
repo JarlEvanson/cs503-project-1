@@ -189,6 +189,11 @@ TestList acquire_integration_tests() {
         }
     }
 
+    for (size_t i = 0; i < countof(index_files); i++) {
+        if (index_files[i] == NULL) continue;
+
+        fclose(index_files[i]);
+    }
     if (test_index != tests.test_count) {
         fprintf(stderr, "error: non-matching counts\n");
         exit(EXIT_FAILURE);
@@ -231,10 +236,12 @@ bool run_integration_test(Vm* vm, s8 input, s8 output) {
     parser_init_s8(&output_parser, output);
 
     bool result = false;
+    size_t roots = vm->gc.root_count;
 
     ParseResult input_parse;
     ParseResult output_parse;
     while (parser_next_sexpr(vm, &input_parser, &input_parse)) {
+    ASSERT(roots == vm->gc.root_count);
         if (!input_parse.ok) {
             fprintf(stderr, "input parsing failed\n");
             goto cleanup;
@@ -276,6 +283,7 @@ bool run_integration_test(Vm* vm, s8 input, s8 output) {
 
     result = true;
 cleanup:
+    ASSERT(roots == vm->gc.root_count);
     parser_free(&output_parser);
     parser_free(&input_parser);
     return result;
@@ -346,6 +354,13 @@ int main() {
 
         printf("%s: %s\n", result ? "✅" : "❌", test.name);
         *(result ? &successes : &failures) += 1;
+
+        if (!test.is_unit_test) {
+            free(test.name);
+            free(test.test.input);
+            free(test.test.output);
+            memset(&tests.tests[index], 0, sizeof(TestDefinition));
+        }
 
         index += 1;
         if (

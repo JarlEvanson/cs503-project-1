@@ -17,6 +17,12 @@ bool eval_internal(
     SExpr** result
 );
 
+bool validate_func_def(
+    Vm* vm,
+    EvalContext* context,
+    SExpr* function_def
+);
+
 #define DEFINE_BUILTIN(name, arg_count, func) \
     (BuiltinDef) { s8(name), false, arg_count, true, func }
 
@@ -361,23 +367,25 @@ static bool and(
     SExpr* arg_0 = EXTRACT_CAR(args);
     SExpr* arg_1 = EXTRACT_CAR(EXTRACT_CDR(args));
 
+    VM_ROOT(vm, &context);
     VM_ROOT(vm, &arg_1);
 
     SExpr* eval_result = NULL;
+    bool success = false;
     if (!eval_internal(vm, context, arg_0, &eval_result)) {
-        VM_UNROOT(vm, &arg_1);
-        return false;
+        goto cleanup;
     }
     if (IS_NIL(eval_result)) {
-        VM_UNROOT(vm, &arg_1);
         *result = NIL;
-        return true;
+        goto cleanup;
     }
 
-    bool success = eval_internal(vm, context, arg_1, &eval_result);
+    success = eval_internal(vm, context, arg_1, &eval_result);
     if (success) *result = eval_result;
 
+cleanup:
     VM_UNROOT(vm, &arg_1);
+    VM_UNROOT(vm, &context);
     return success;
 }
 
@@ -390,16 +398,19 @@ static bool or(
     SExpr* arg_0 = EXTRACT_CAR(args);
     SExpr* arg_1 = EXTRACT_CAR(EXTRACT_CDR(args));
 
+    VM_ROOT(vm, &context);
     VM_ROOT(vm, &arg_1);
 
     SExpr* eval_result = NULL;
     if (!eval_internal(vm, context, arg_0, &eval_result)) {
         *result = vm_alloc_symbol(vm, s8("t"));
         VM_UNROOT(vm, &arg_1);
+        VM_ROOT(vm, &context);
         return true;
     }
 
     VM_UNROOT(vm, &arg_1);
+    VM_UNROOT(vm, &context);
     if (!IS_NIL(eval_result)) {
         *result = vm_alloc_symbol(vm, s8("t"));
         return true;
@@ -418,13 +429,16 @@ static bool sexpr_if(
     SExpr* arg_1 = EXTRACT_CAR(EXTRACT_CDR(args));
     SExpr* arg_2 = EXTRACT_CAR(EXTRACT_CDR(EXTRACT_CDR(args)));
 
+    SExpr* eval_result = NULL;
+
+    VM_ROOT(vm, &context);
     VM_ROOT(vm, &arg_1);
     VM_ROOT(vm, &arg_2);
-
-    SExpr* eval_result = NULL;
     bool success = eval_internal(vm, context, arg_0, &eval_result);
     VM_UNROOT(vm, &arg_1);
     VM_UNROOT(vm, &arg_2);
+    VM_UNROOT(vm, &context);
+
     if (!success) return false;
     if (!IS_NIL(eval_result)) {
         success = eval_internal(vm, context, arg_1, &eval_result);
@@ -436,58 +450,59 @@ static bool sexpr_if(
     return success;
 }
 
-/*
 static bool sexpr_cond(
     Vm* vm,
     EvalContext* context,
     SExpr* args,
     SExpr** result
 ) {
+    VM_ROOT(vm, &context);
     VM_ROOT(vm, &args);
 
     SExpr* eval_result = NULL;
+    bool success = false;
     while (!IS_NIL(args)) {
         SExpr* pair = EXTRACT_CAR(args);
         SExpr* arg_0 = EXTRACT_CAR(pair);
 
-        result = eval_internal(vm, frame, arg_0);
-        if (!result.ok) goto cleanup;
-        if (!IS_NIL(result.as.ok)) {
-            result = eval_internal(
+        if (!eval_internal(vm, context, arg_0, &eval_result)) {
+            goto cleanup;
+        }
+
+        if (!IS_NIL(eval_result)) {
+            success = eval_internal(
                 vm,
-                frame,
-                EXTRACT_CAR(EXTRACT_CDR(EXTRACT_CAR(args)))
+                context,
+                EXTRACT_CAR(EXTRACT_CDR(EXTRACT_CAR(args))),
+                &eval_result
             );
+            if (success) *result = eval_result;
             goto cleanup;
         }
 
         args = EXTRACT_CDR(args);
     }
 
-    result = eval_result_error(vm, frame, COND_NO_BRANCH);
+    eval_context_illegal_call(context, args);
 cleanup:
     VM_UNROOT(vm, &args);
-    return result;
+    VM_UNROOT(vm, &context);
+    return success;
 }
-*/
 
-/*
-static EvalResult sexpr_define(Vm* vm, CallFrame* frame, SExpr* args) {
-    if (!IS_SYMBOL(EXTRACT_CAR(args)))
-        return eval_result_error(vm, frame, TYPE_ERROR);
+static bool sexpr_define(
+    Vm* vm,
+    EvalContext* context,
+    SExpr* args,
+    SExpr** result
+) {
+    if (!IS_SYMBOL(EXTRACT_CAR(args))) {
+        eval_context_invalid_type(context, 0, EXTRACT_CAR(args), SEXPR_SYMBOL);
+        return false;
+    }
 
-    if (!IS_CONS(EXTRACT_CAR(EXTRACT_CDR(args))))
-        return eval_result_error(vm, frame, TYPE_ERROR);
-
-    SExpr* arg = EXTRACT_CAR(EXTRACT_CDR(args));
-    while (!IS_NIL(arg)) {
-        if (!IS_SYMBOL(EXTRACT_CAR(arg)))
-            return eval_result_error(vm, frame, TYPE_ERROR);
-
-        if (!IS_CONS(EXTRACT_CDR(arg)))
-            return eval_result_error(vm, frame, DOTTED_ARG_LIST);
-
-        arg = EXTRACT_CDR(arg);
+    if (!validate_func_def(vm, context, EXTRACT_CDR(args))) {
+        return false;
     }
 
     env_set(
@@ -497,9 +512,8 @@ static EvalResult sexpr_define(Vm* vm, CallFrame* frame, SExpr* args) {
         EXTRACT_CDR(args)
     );
 
-    return eval_result_ok(NIL);
+    return true;
 }
-*/
 
 static bool sexpr_lambda(
     Vm* vm,
@@ -546,11 +560,13 @@ BuiltinDef builtin_def_list[] = {
     DEFINE_BUILTIN("!", 1, sexpr_not),
     DEFINE_BUILTIN("car", 1, sexpr_car),
     DEFINE_BUILTIN("cdr", 1, sexpr_cdr),
+    DEFINE_BUILTIN_NO_EVAL("quote", 1, sexpr_quote),
     DEFINE_BUILTIN_NO_EVAL("set", 2, set),
     DEFINE_BUILTIN_NO_EVAL("and", 2, and),
     DEFINE_BUILTIN_NO_EVAL("or", 2, or),
     DEFINE_BUILTIN_NO_EVAL("if", 3, sexpr_if),
-    DEFINE_BUILTIN_NO_EVAL("quote", 1, sexpr_quote),
+    DEFINE_BUILTIN_NO_EVAL_VARIADIC("cond", sexpr_cond),
+    DEFINE_BUILTIN_NO_EVAL("define", 3, sexpr_define),
     DEFINE_BUILTIN_NO_EVAL("lambda", 2, sexpr_lambda),
 };
 
