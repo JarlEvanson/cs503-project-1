@@ -90,7 +90,7 @@ static bool eval_handle_builtin(
     }
 
 cleanup:
-    eval_context_pop_frame(context);
+    if (func_result) eval_context_pop_frame(context);
     VM_UNROOT(vm, &sexpr);
     VM_UNROOT(vm, &context);
     return func_result;

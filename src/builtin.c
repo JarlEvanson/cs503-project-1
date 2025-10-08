@@ -26,6 +26,9 @@ bool validate_func_def(
 #define DEFINE_BUILTIN(name, arg_count, func) \
     (BuiltinDef) { s8(name), false, arg_count, true, func }
 
+#define DEFINE_BUILTIN_VARIADIC(name, func) \
+    (BuiltinDef) { s8(name), true, 0, true, func }
+
 #define DEFINE_BUILTIN_NO_EVAL(name, arg_count, func) \
     (BuiltinDef) { s8(name), false, arg_count, false, func }
 
@@ -528,6 +531,60 @@ static bool sexpr_lambda(
     return true;
 }
 
+static bool sexpr_function(
+    Vm* vm,
+    EvalContext* context,
+    SExpr* args,
+    SExpr** result
+) {
+    SExpr* function_id = EXTRACT_CAR(args);
+    if (!IS_SYMBOL(function_id)) {
+        eval_context_invalid_type(context, 0, function_id, SEXPR_SYMBOL);
+        return false;
+    }
+
+    SExpr* function_def = NIL;
+    if (!env_lookup(&vm->funcs, function_id, &function_def)) {
+        s8 symbol = EXTRACT_SYMBOL(function_id);
+        for (size_t i = 0; i < builtin_def_list; i++) {
+            if (s8_equals(symbol, builtin_def_list[i].name)) {
+                goto cont;
+            }
+        }
+
+        eval_context_symbol_lookup_failed(context, function_id);
+        return false;
+    }
+cont:
+
+    VM_ROOT(vm, &function_id);
+    SExpr* tmp = vm_alloc_cons(vm, function_def, NIL);
+    VM_UNROOT(vm, &function_id);
+    
+    tmp = vm_alloc_cons(vm, function_id, tmp);
+
+    VM_ROOT(vm, &tmp);
+    SExpr* q_function = vm_alloc_symbol(vm, s8("'function"));
+    VM_UNROOT(vm, &tmp);
+
+    *result = vm_alloc_cons(vm, q_function, tmp);
+    return true;
+}
+
+static bool sexpr_funcall(
+    Vm* vm,
+    EvalContext* context,
+    SExpr* args,
+    SExpr** result
+) {
+    // Accepts either lambdas or ('function name (def)).
+
+    PRINT_SEXPR_RAW(args, 0);
+
+    ASSERT(false);
+    return false;
+}
+
 BuiltinDef builtin_def_list[] = {
     DEFINE_BUILTIN("nil?", 1, is_nil),
     DEFINE_BUILTIN("symbol?", 1, is_symbol),
@@ -568,6 +625,8 @@ BuiltinDef builtin_def_list[] = {
     DEFINE_BUILTIN_NO_EVAL_VARIADIC("cond", sexpr_cond),
     DEFINE_BUILTIN_NO_EVAL("define", 3, sexpr_define),
     DEFINE_BUILTIN_NO_EVAL("lambda", 2, sexpr_lambda),
+    DEFINE_BUILTIN_NO_EVAL("function", 1, sexpr_function),
+    DEFINE_BUILTIN_VARIADIC("funcall", sexpr_funcall),
 };
 
 size_t builtin_def_count = countof(builtin_def_list);
