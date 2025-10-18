@@ -19,6 +19,8 @@
 
 // Enables logging of GC operations.
 // #define DEBUG_LOG_GC
+// Enables logging of each eval call.
+// #define DEBUG_LOG_EVAL
 
 #ifdef ENABLE_TESTS
 
