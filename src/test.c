@@ -5,6 +5,7 @@
 #include "arena.h"
 #include "common.h"
 #include "eval-context.h"
+#include "eval.h"
 #include "gc.h"
 #include "lexer.h"
 #include "parse-context.h"
@@ -31,6 +32,7 @@ TestList acquire_unit_tests() {
     TestList unit_test_lists[] = {
         arena_test_list,
         eval_context_test_list,
+        eval_test_list,
         gc_test_list,
         lexer_test_list,
         parse_context_test_list,
