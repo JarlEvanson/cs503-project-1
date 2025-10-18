@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "eval.h"
 #include "parser.h"
 #include "vm.h"
 
@@ -14,8 +15,13 @@ void drive(Vm* vm, Parser* parser) {
             continue;
         }
 
-        PRINT_SEXPR(parse_result.as.ok);
-        printf("\n");
+        EvalResult eval_result = eval(vm, parse_result.as.ok);
+        if (!eval_result.ok) {
+            eval_context_print(eval_result.as.err);
+            continue;
+        }
+
+        PRINT_SEXPR(eval_result.as.ok); printf("\n");
     }
 }
 
