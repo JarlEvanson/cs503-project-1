@@ -24,6 +24,7 @@ bool eval_context_lookup(
 
 void eval_context_push_frame(Vm* vm, EvalContext* context, SExpr* id);
 void eval_context_pop_frame(EvalContext* context);
+size_t eval_context_stack_depth(EvalContext* context);
 
 void eval_context_invalid_type(
     EvalContext* context,
@@ -58,6 +59,7 @@ void eval_context_symbol_lookup_failed(
     EvalContext* context,
     SExpr* sexpr
 );
+void eval_context_max_stack_depth_reached(EvalContext* context);
 
 void eval_context_print(const EvalContext* context);
 void eval_context_print_raw(const EvalContext* context);

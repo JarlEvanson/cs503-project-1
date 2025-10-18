@@ -95,6 +95,7 @@ bool eval_internal(
     SExpr* sexpr,
     SExpr** result
 ) {
+
 #ifdef DEBUG_LOG_EVAL
     p(); PRINT_SEXPR(sexpr); printf("\n"); tab_count++;
 #endif
@@ -115,6 +116,11 @@ bool eval_internal(
         }
 
         success = true;
+        goto cleanup;
+    }
+
+    if (eval_context_stack_depth(context) >= 4096) {
+        eval_context_max_stack_depth_reached(context);
         goto cleanup;
     }
 

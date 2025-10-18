@@ -40,6 +40,8 @@ typedef enum {
     //
     // `sexpr` is active.
     SYMBOL_LOOKUP_FAILED,
+    // The maximum stack depth allowed was reached.
+    MAX_STACK_DEPTH_REACHED,
 } ErrorType;
 
 typedef struct EvalFrame EvalFrame;
@@ -151,6 +153,18 @@ void eval_context_pop_frame(EvalContext* context) {
     context->frame = context->frame->next;
 }
 
+size_t eval_context_stack_depth(EvalContext* context) {
+    size_t depth = 0;
+
+    EvalFrame* frame = context->frame;
+    while (frame != NULL) {
+        depth += 1;
+        frame = frame->next;
+    }
+
+    return depth;
+}
+
 void eval_context_invalid_type(
     EvalContext* context,
     size_t arg_index,
@@ -224,6 +238,11 @@ void eval_context_symbol_lookup_failed(
     context->sexpr = symbol;
 }
 
+void eval_context_max_stack_depth_reached(EvalContext* context) {
+    context->has_error = true;
+    context->error = MAX_STACK_DEPTH_REACHED;
+}
+
 void eval_context_print(const EvalContext* context) {
     if (context->has_error) {
         switch (context->error) {
@@ -281,6 +300,9 @@ void eval_context_print(const EvalContext* context) {
                 PRINT_SEXPR(context->sexpr);
                 printf("` failed\n");
                 break;
+            case MAX_STACK_DEPTH_REACHED:
+                printf("max stack depth reached\n");
+                break;
         }
     }
 
@@ -293,6 +315,7 @@ void eval_context_print(const EvalContext* context) {
         PRINT_SEXPR(frame->function_id);
         printf("\n");
 
+        frame_index += 1;
         frame = frame->next;
     }
 
