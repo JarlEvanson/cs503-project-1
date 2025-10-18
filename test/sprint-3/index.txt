@@ -1,0 +1,11 @@
+add
+sub
+mul
+div
+mod
+lt
+gt
+lte
+gte
+eq
+not

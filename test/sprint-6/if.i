@@ -1,0 +1,8 @@
+(if () 1 2)
+(if 't 2 1)
+(if (symbol? 't) 'l 'k)
+(if (symbol? 't) (+ 1 2) ())
+(if (symbol? 't) (+ (/ 1 2) 2) (/ 0 0))
+(if (not (symbol? 't)) () (+ 1 2))
+(if (cons 1 '(2)) 'q 'w)
+(if 1 (cons 1 '(2)) 'w)
