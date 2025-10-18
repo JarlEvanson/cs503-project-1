@@ -30,8 +30,10 @@ int main() {
         input.len = __AFL_FUZZ_TESTCASE_LEN;
         parser_init_s8(&parser, input);
 
+        size_t root_count = vm.gc.root_count;
         ParseResult parse_result;
         while (parser_next_sexpr(&vm, &parser, &parse_result)) {
+            ASSERT(root_count == vm.gc.root_count);
             if (!parse_result.ok) {
                 parse_context_print(parse_result.as.err, &parser);
                 continue;
@@ -41,6 +43,7 @@ int main() {
             printf("\n");
 
             EvalResult eval_result = eval(&vm, parse_result.as.ok);
+            ASSERT(root_count == vm.gc.root_count);
             if (!eval_result.ok) {
                 eval_context_print(eval_result.as.err);
                 continue;

@@ -239,9 +239,11 @@ bool run_integration_test(Vm* vm, s8 input, s8 output) {
 
     bool result = false;
 
+    size_t root_count = vm->gc.root_count;
     ParseResult input_parse;
     ParseResult output_parse;
     while (parser_next_sexpr(vm, &input_parser, &input_parse)) {
+        ASSERT(root_count == vm->gc.root_count);
         if (!input_parse.ok) {
             fprintf(stderr, "input parsing failed\n");
             goto cleanup;
@@ -257,6 +259,7 @@ bool run_integration_test(Vm* vm, s8 input, s8 output) {
         }
 
         VM_UNROOT(vm, &input_parse.as.ok);
+        ASSERT(root_count == vm->gc.root_count);
         VM_ROOT(vm, &input_result.as.ok);
 
         if (!parser_next_sexpr(vm, &output_parser, &output_parse)) {
