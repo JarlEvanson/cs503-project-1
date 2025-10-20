@@ -9,6 +9,7 @@ typedef struct EvalContext EvalContext;
 
 EvalContext* eval_context_alloc(Vm* vm);
 bool eval_context_is_ok(EvalContext* context);
+void eval_context_disable_local_env(EvalContext* context);
 void eval_context_add_symbol(
     Vm* vm,
     EvalContext* context,

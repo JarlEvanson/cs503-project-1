@@ -49,6 +49,8 @@ struct EvalFrame {
     GcObject object;
 
     SExpr* function_id;
+
+    bool valid_env;
     Environment env;
 
     EvalFrame* next;
@@ -92,14 +94,25 @@ void eval_context_add_symbol(
     SExpr* symbol,
     SExpr* value
 ) {
+    EvalFrame* frame = context->frame;
+    while (frame != NULL && !frame->valid_env) {
+        frame = frame->next;
+    }
+
     Environment* env;
-    if (context->frame == NULL) {
+    if (frame == NULL) {
         env = &vm->vars;
     } else {
-        env = &context->frame->env;
+        env = &frame->env;
     }
 
     env_set(vm, env, symbol, value);
+}
+
+void eval_context_disable_local_env(EvalContext* context) {
+    ASSERT(context->frame != NULL);
+
+    context->frame->valid_env = false;
 }
 
 bool eval_context_lookup(
@@ -137,6 +150,8 @@ void eval_context_push_frame(Vm* vm, EvalContext* context, SExpr* id) {
     VM_UNROOT(vm, &env.list);
 
     frame->function_id = id;
+
+    frame->valid_env = true;
     frame->env = env;
 
     frame->next = context->frame;
@@ -337,8 +352,25 @@ void eval_context_print_raw(const EvalContext* context) {
         printf("\t\tFrame {\n");
         printf("\t\t\tfunction_id: ");
         PRINT_SEXPR_RAW(frame->function_id, 3);
-        printf("\n\t\t\tenv: ");
-        PRINT_SEXPR_RAW(frame->env.list, 3);
+        printf("\n\t\t\tvalid_env: %s", frame->valid_env ? "true" : "false");
+
+        printf("\n\t\t\tenv: [");
+
+        SExpr* symbols = EXTRACT_CAR(frame->env.list);
+        SExpr* values = EXTRACT_CAR(EXTRACT_CDR(frame->env.list));
+        while (!IS_NIL(symbols)) {
+            SExpr* symbol = EXTRACT_CAR(symbols);
+            SExpr* value = EXTRACT_CAR(values);
+
+            printf("\n\t\t\t\t");
+            PRINT_SEXPR(symbol);
+            printf(" ");
+            PRINT_SEXPR(value);
+
+            symbols = EXTRACT_CDR(symbols);
+            values = EXTRACT_CDR(values);
+        }
+        printf("\n\t\t\t]");
         printf("\n\t\t}\n");
 
         frame = frame->next;
@@ -399,6 +431,7 @@ void eval_frame_copy(Gc* gc, GcObject* object, GcObject* new_object) {
     new_frame->function_id =
         (SExpr*) gc_copy_object(gc, (GcObject*) frame->function_id);
 
+    new_frame->valid_env = frame->valid_env;
     new_frame->env.list =
         (SExpr*) gc_copy_object(gc, (GcObject*) frame->env.list);
 
