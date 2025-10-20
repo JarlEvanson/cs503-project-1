@@ -518,31 +518,6 @@ static bool builtin_if(
     return success;
 }
 
-static bool builtin_define(
-    Vm* vm,
-    EvalContext* context,
-    size_t arg_count,
-    SExpr* args,
-    SExpr** result
-) {
-    if (!IS_SYMBOL(EXTRACT_CAR(args))) {
-        eval_context_invalid_type(context, 0, EXTRACT_CAR(args), SEXPR_SYMBOL);
-        return false;
-    }
-
-    if (!validate_function_def(context, EXTRACT_CDR(args))) {
-        return false;
-    }
-
-    VM_ROOT(vm, &args);
-    SExpr* function_data_start = vm_alloc_symbol(vm, s8("'function"));
-    SExpr* function_type = vm_alloc_cons(vm, function_data_start, args);
-    VM_UNROOT(vm, &args);
-
-    env_set(vm, &vm->funcs, EXTRACT_CAR(args), function_type);
-    return true;
-}
-
 static bool builtin_function(
     Vm* vm,
     EvalContext* context,
@@ -602,6 +577,42 @@ static bool builtin_lambda(
     return true;
 }
 
+static bool builtin_let(
+    Vm* vm,
+    EvalContext* context,
+    size_t arg_count,
+    SExpr* args,
+    SExpr** result
+) {
+    eval_context_disable_local_env(context);
+
+    SExpr* var_name = EXTRACT_CAR(args);
+    SExpr* value = EXTRACT_CAR(EXTRACT_CDR(args));
+    if (!IS_SYMBOL(var_name)) {
+        eval_context_invalid_type(context, 0, var_name, SEXPR_SYMBOL);
+        return false;
+    }
+
+    VM_ROOT(vm, &context);
+    VM_ROOT(vm, &var_name);
+    VM_ROOT(vm, &value);
+
+    bool success = false;
+    SExpr* eval_result = NULL;
+    if (!eval_internal(vm, context, value, &eval_result)) {
+        goto cleanup;
+    }
+
+    eval_context_add_symbol(vm, context, var_name, eval_result);
+    success = true;
+
+cleanup:
+    VM_UNROOT(vm, &value);
+    VM_UNROOT(vm, &var_name);
+    VM_UNROOT(vm, &context);
+    return success;
+}
+
 static bool builtin_quote(
     Vm* vm,
     EvalContext* context,
@@ -642,6 +653,40 @@ static bool builtin_set(
 cleanup:
     VM_UNROOT(vm, &value);
     VM_UNROOT(vm, &var_name);
+    return success;
+}
+
+static bool builtin_begin(
+    Vm* vm,
+    EvalContext* context,
+    size_t arg_count,
+    SExpr* args,
+    SExpr** result
+) {
+    eval_context_disable_local_env(context);
+
+    if (arg_count == 0) {
+        eval_context_erronous_arg_count(context, 1);
+        return false;
+    }
+
+    bool success = false;
+    SExpr* arg_cons = args;
+
+    VM_ROOT(vm, &context);
+    VM_ROOT(vm, &arg_cons);
+    while (!IS_NIL(arg_cons)) {
+        success = eval_internal(vm, context, EXTRACT_CAR(arg_cons), result);
+        if (!success) {
+            goto cleanup;
+        }
+
+        arg_cons = EXTRACT_CDR(arg_cons);
+    }
+
+cleanup:
+    VM_UNROOT(vm, &arg_cons);
+    VM_UNROOT(vm, &context);
     return success;
 }
 
@@ -694,6 +739,48 @@ cleanup:
     VM_UNROOT(vm, &args);
     VM_UNROOT(vm, &context);
     return success;
+}
+
+static bool builtin_define(
+    Vm* vm,
+    EvalContext* context,
+    size_t arg_count,
+    SExpr* args,
+    SExpr** result
+) {
+    if (arg_count < 3) {
+        eval_context_erronous_arg_count(context, 3);
+        return false;
+    }
+
+    if (!IS_SYMBOL(EXTRACT_CAR(args))) {
+        eval_context_invalid_type(context, 0, EXTRACT_CAR(args), SEXPR_SYMBOL);
+        return false;
+    }
+
+    VM_ROOT(vm, &args);
+    SExpr* body_begin = vm_alloc_symbol(vm, s8("begin"));
+    SExpr* body =
+        vm_alloc_cons(vm, body_begin, EXTRACT_CDR(EXTRACT_CDR(args)));
+    SExpr* function_def = vm_alloc_cons(vm, body, NIL);
+    function_def =
+        vm_alloc_cons(vm, EXTRACT_CAR(EXTRACT_CDR(args)), function_def);
+
+    if (!validate_function_def(context, function_def)) {
+        return false;
+    }
+
+    function_def =
+        vm_alloc_cons(vm, EXTRACT_CAR(args), function_def);
+
+    VM_ROOT(vm, &function_def);
+    SExpr* function_data_start = vm_alloc_symbol(vm, s8("'function"));
+    VM_UNROOT(vm, &function_def);
+    function_def = vm_alloc_cons(vm, function_data_start, function_def);
+    VM_UNROOT(vm, &args);
+
+    env_set(vm, &vm->funcs, EXTRACT_CAR(args), function_def);
+    return true;
 }
 
 static bool builtin_funcall(
@@ -792,13 +879,15 @@ BuiltinDef builtin_def_list[] = {
     DEFINE_BUILTIN_NO_EVAL("or", 2, builtin_or),
     DEFINE_BUILTIN_NO_EVAL("if", 3, builtin_if),
 
-    DEFINE_BUILTIN_NO_EVAL("define", 3, builtin_define),
     DEFINE_BUILTIN_NO_EVAL("function", 1, builtin_function),
     DEFINE_BUILTIN_NO_EVAL("lambda", 2, builtin_lambda),
+    DEFINE_BUILTIN_NO_EVAL("let", 2, builtin_let),
     DEFINE_BUILTIN_NO_EVAL("quote", 1, builtin_quote),
     DEFINE_BUILTIN_NO_EVAL("set", 2, builtin_set),
 
+    DEFINE_BUILTIN_NO_EVAL_VARIADIC("begin", builtin_begin),
     DEFINE_BUILTIN_NO_EVAL_VARIADIC("cond", builtin_cond),
+    DEFINE_BUILTIN_NO_EVAL_VARIADIC("define", builtin_define),
     DEFINE_BUILTIN_NO_EVAL_VARIADIC("funcall", builtin_funcall),
 };
 
