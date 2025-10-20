@@ -117,8 +117,8 @@ TestList acquire_integration_tests() {
     tests.tests = NULL;
     tests.test_count = 0;
 
-    FILE* index_files[9] = { 0 };
-    size_t sprint_test_count[9] = { 0 };
+    FILE* index_files[10] = { 0 };
+    size_t sprint_test_count[countof(index_files)] = { 0 };
     char path[24] = { 0 };
     memcpy(path, "test/sprint-0/index.txt", 24);
 
@@ -128,7 +128,7 @@ TestList acquire_integration_tests() {
         exit(EXIT_FAILURE);
     }
 
-    for (size_t i = 0; i < 9; i++) {
+    for (size_t i = 0; i < countof(index_files); i++) {
         path[12] = i + '0';
         index_files[i] = fopen(path, "rb");
         if (index_files[i] == NULL) continue;
