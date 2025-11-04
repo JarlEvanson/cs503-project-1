@@ -446,6 +446,24 @@ restart_sym:
         // We don't need to handle end of character stream or invalid UTF-8
         // bytes here, since we essentially restart the function.
         goto restart;
+    } else if (c == 0x3B) {
+        // Semicolon
+        while (1) {
+            while (lexer_peek_codepoint(lexer, &utf8_error, &c)) {
+                if (c == 0x0A) break;
+                lexer_next_codepoint(lexer, &utf8_error, &c);
+            }
+
+            if (utf8_error) {
+                lexer_handle_utf8_error(vm, lexer, context);
+                continue;
+            }
+
+            break;
+        }
+
+        // Continue parsing (we just skipped the comment).
+        goto restart;
     }
 
     size_t encountered_dots;
