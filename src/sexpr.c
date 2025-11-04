@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "gc.h"
@@ -46,6 +47,7 @@ s8 sexpr_s8(const SExpr* sexpr) {
 }
 
 void sexpr_print(const SExpr* sexpr) {
+    char buf[128];
     s8 s;
 
     switch (EXTRACT_TYPE(sexpr)) {
@@ -58,7 +60,14 @@ void sexpr_print(const SExpr* sexpr) {
             fwrite(s.ptr, s.len, sizeof(uint8_t), stdout);
             break;
         case SEXPR_NUMBER:
-            printf("%f", EXTRACT_NUMBER(sexpr));
+            snprintf(buf, sizeof(buf) / sizeof(char), "%.10f", EXTRACT_NUMBER(sexpr));
+
+            char* p = buf + strlen(buf) - 1;
+            while (*p == '0' && p > buf) p--;
+            if (*p == '.') p--;
+            *(p + 1) = '\0';
+
+            printf("%s", buf);
             break;
         case SEXPR_CONS:
             printf("(");
