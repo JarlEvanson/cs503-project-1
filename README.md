@@ -4,6 +4,13 @@
 
 The project provides an implementation of a Lisp interpreter.
 
+## Special Notes
+
+The project provides an implementation of a copying garbage collector and the
+built-in functions `let` and `begin`. The project also implemented `funcall`,
+and `function` in order to support higher-order functions in the Type-2
+environment.
+
 ## Organization
 
 The code is organized into a source directory (`src/`) and a header directory
@@ -23,7 +30,15 @@ The `fuzz/` directory contains the initial seeds for a fuzzing run, and will
 contain a temporary directory when fuzzing.
 
 The `test/` directory contains various assets used for integration testing of
-the `lisp` program.
+the `lisp` program. Each sprint that has integration tests has a folder named
+after it. The index file inside each sprint's folder defines the name of each
+integration test, which has two files to specify input and output from the
+interpreter. The files are respectively `name.i` and `name.o`. The input file
+is run through the interpreter and compared with the parsed form of the output
+file. If the evaluated input and the parsed output are the same, then the test
+succeeds. Other tests are located at the bottom of source files and test various
+other aspects of the interpreter that may not be well-tested or easily tested
+using the integration tester.
 
 The `submissions/` directory will contain assets related to the submission of
 various sprints.
@@ -66,6 +81,7 @@ make build-fuzz
 To run the unit and integration tests, run:
 ```bash
 make test
+./build/test-runner
 ```
 
 To fuzz the interpreter, run:

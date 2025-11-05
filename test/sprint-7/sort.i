@@ -19,9 +19,9 @@
 ))
 
 (define insert(x L)(cond
-    ((nil? L) (cons x ()); tail)
-    ((lte x (car L)) (cons x L); head)
-    ('t  (cons (car L) (insert x (cdr L))); middle)
+    ((nil? L) (cons x ()) tail)
+    ((lte x (car L)) (cons x L) head)
+    ('t  (cons (car L) (insert x (cdr L))) middle)
 ))
 
 

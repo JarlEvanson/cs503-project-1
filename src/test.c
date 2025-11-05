@@ -246,6 +246,7 @@ bool run_integration_test(Vm* vm, s8 input, s8 output) {
         ASSERT(root_count == vm->gc.root_count);
         if (!input_parse.ok) {
             fprintf(stderr, "input parsing failed\n");
+            parse_context_print(input_parse.as.err, &input_parser);
             goto cleanup;
         }
         VM_ROOT(vm, &input_parse.as.ok);

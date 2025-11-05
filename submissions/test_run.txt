@@ -1,0 +1,86 @@
+./build/test-runner
+General Unit Tests
+----------------------------------------
+✅: arena_alloc_can_fill
+✅: arena_alloc_from_unaligned
+✅: gc_handle_failed_alloc_during_collect
+✅: gc_support_redundant_rooting
+✅: parse_context_chaining
+✅: parse_context_counting
+✅: s8_copy_from_works
+✅: s8_copy_works
+
+Sprint 1
+----------------------------------------
+✅: lexer_lex_complex_escapes
+✅: lexer_lex_nil
+✅: lexer_lex_nothing
+✅: lexer_lex_numbers
+✅: lexer_lex_strange_symbols
+✅: lexer_lex_string_suffix
+✅: lexer_lex_unterminated_string
+✅: lexer_lex_utf8_error
+✅: parser_parse_basic_symbols
+✅: parser_parse_double_nil
+✅: parser_parse_nil
+✅: parser_parse_simple_list
+✅: parser_skip_right_parens
+
+Sprint 2
+----------------------------------------
+✅: cadr
+✅: car
+✅: cdr
+✅: cons
+✅: is_list
+✅: is_nil
+✅: is_number
+✅: is_string
+✅: is_symbol
+
+Sprint 3
+----------------------------------------
+✅: add
+✅: div
+✅: eq
+✅: gt
+✅: gte
+✅: lt
+✅: lte
+✅: mod
+✅: mul
+✅: not
+✅: sub
+
+Sprint 5
+----------------------------------------
+✅: quote
+✅: set
+✅: vm_env_set_lookup_basic
+✅: vm_env_set_lookup_multi_support
+✅: vm_env_set_lookup_override
+
+Sprint 6
+----------------------------------------
+✅: and
+✅: cond
+✅: if
+✅: or
+
+Sprint 7
+----------------------------------------
+✅: define
+✅: eval_context_symbol_manipulation
+✅: sort
+
+Sprint 8
+----------------------------------------
+✅: basic
+✅: map
+
+Sprint 9
+----------------------------------------
+✅: begin
+✅: let
+✅: multi-def
+test results: ok. 58 passed; 0 failed
